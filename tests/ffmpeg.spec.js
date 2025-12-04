@@ -47,9 +47,7 @@ describe('ffmpeg progress parsing', () => {
   });
 
   test('reports progress correctly', async () => {
-    const progressCallback = jest.fn();
-
-    const p = ffmpeg(['-i', 'input.mp4'], progressCallback);
+    const p = ffmpeg(['-i', 'input.mp4']);
 
     stderrHandlers['data'](Buffer.from('Duration: 00:00:10.00\n'));
     stderrHandlers['data'](Buffer.from('frame=3 time=00:00:03.00\n'));
@@ -57,16 +55,14 @@ describe('ffmpeg progress parsing', () => {
 
     await p;
 
-    expect(progressCallback).toHaveBeenCalledWith(0);
     expect(mockState).toHaveBeenCalledWith('progress', '30%');
     expect(mockState).toHaveBeenCalledWith('progress', '100%');
   });
 
   test('should call state("error", ...) on ffmpeg error', async () => {
     const args = ['-i', 'input.mp4'];
-    const progressMock = jest.fn();
 
-    const promise = ffmpeg(args, progressMock);
+    const promise = ffmpeg(args);
 
     const error = new Error('mock error');
     eventHandlers['error'](error);
