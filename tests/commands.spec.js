@@ -4,7 +4,7 @@ let ffmpeg, getAudioCodec, commands;
 
 beforeAll(async () => {
   jest.unstable_mockModule('../lib/ffmpeg.js', () => ({
-    ffmpeg: jest.fn(async (...args) => {})
+    ffmpeg: jest.fn(async () => {})
   }));
 
   jest.unstable_mockModule('../lib/ffprobe.js', () => ({
