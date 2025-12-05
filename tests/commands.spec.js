@@ -26,7 +26,7 @@ describe('commands', () => {
   test('convert calls with correct args.', async () => {
     const command = commands.convert;
 
-    await command('input.mp4', 'avi', { video: 'h264', audio: 'mp3' });
+    await command({ input: 'input.mp4', format: 'avi', codecs: { video: 'h264', audio: 'mp3' } });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-c:a', 'mp3', '-c:v', 'h264', '-f', 'avi', 'input.avi']);
@@ -35,7 +35,7 @@ describe('commands', () => {
   test('splitHls calls with correct args.', async () => {
     const command = commands['split-hls'];
 
-    await command('input.mp4', 12, { video: 'h264', audio: 'aac' });
+    await command({ input: 'input.mp4', segmentDuration: 12, codecs: { video: 'h264', audio: 'aac' } });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith([
@@ -60,7 +60,7 @@ describe('commands', () => {
   test('concatHlsToMp4 calls with correct args.', async () => {
     const command = commands['concat-hls-to-mp4'];
 
-    await command('input.txt');
+    await command({ input: 'input.txt' });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-f', 'concat', '-safe', '0', '-i', 'input.txt', '-c', 'copy', 'input.mp4']);
@@ -69,7 +69,7 @@ describe('commands', () => {
   test('split calls with correct args.', async () => {
     const command = commands.split;
 
-    await command('input.mp4', 12);
+    await command({ input: 'input.mp4', segmentDuration: 12 });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith([
@@ -90,7 +90,7 @@ describe('commands', () => {
   test('extractPart calls with correct args.', async () => {
     const command = commands['extract-part'];
 
-    await command('input.mp4', '0:02', '1:42');
+    await command({ input: 'input.mp4', begin: '0:02', end: '1:42' });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith([
@@ -109,7 +109,7 @@ describe('commands', () => {
   test('extractVideo calls with correct args.', async () => {
     const command = commands['extract-video'];
 
-    await command('input.mp4');
+    await command({ input: 'input.mp4' });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-va', '-c:v', 'copy', 'input_video_only.mp4']);
@@ -118,7 +118,7 @@ describe('commands', () => {
   test('extractAudio calls with correct args.', async () => {
     const command = commands['extract-audio'];
 
-    await command('input.mp4', 'copy', 'mp3');
+    await command({ input: 'input.mp4', audioCodec: 'copy', extension: 'mp3' });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vn', '-c:a', 'copy', 'input.mp3']);
@@ -127,7 +127,7 @@ describe('commands', () => {
   test('scale calls with correct args.', async () => {
     const command = commands.scale;
 
-    await command('input.mp4', 800, 600);
+    await command({ input: 'input.mp4', width: 800, height: 600 });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'scale=800:600', 'input_scaled.mp4']);
@@ -136,7 +136,7 @@ describe('commands', () => {
   test('transpose calls with correct args.', async () => {
     const command = commands.transpose;
 
-    await command('input.mp4', 2);
+    await command({ input: 'input.mp4', transposeType: 2 });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'transpose=2', 'input_transposed.mp4']);
@@ -145,7 +145,7 @@ describe('commands', () => {
   test('modifyFps calls with correct args.', async () => {
     const command = commands['modify-fps'];
 
-    await command('input.mp4', 50);
+    await command({ input: 'input.mp4', fps: 50 });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'fps=50', 'input_50fps.mp4']);
@@ -154,7 +154,7 @@ describe('commands', () => {
   test('crop calls with correct args.', async () => {
     const command = commands.crop;
 
-    await command('input.mp4', 50, 40, 20, 10);
+    await command({ input: 'input.mp4', width: 50, height: 40, x: 20, y: 10 });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'crop=50:40:20:10', 'input_cropped.mp4']);
@@ -163,7 +163,7 @@ describe('commands', () => {
   test('watermark calls with correct args.', async () => {
     const command = commands.watermark;
 
-    await command('input.mp4', 'watermark', 10, 20, 32, 'blue');
+    await command({ input: 'input.mp4', text: 'watermark', x: 10, y: 20, fontsize: 32, fontcolor: 'blue' });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith([
@@ -179,9 +179,9 @@ describe('commands', () => {
     test('convert has codec fallback.', async () => {
       const command = commands.convert;
 
-      await command('input_no_codec.mp4', 'avi');
-      await command('input_no_audio_codec.mp4', 'avi', { video: 'h264' });
-      await command('input_no_video_codec.mp4', 'avi', { audio: 'mp3' });
+      await command({ input: 'input_no_codec.mp4', format: 'avi' });
+      await command({ input: 'input_no_audio_codec.mp4', format: 'avi', codecs: { video: 'h264' } });
+      await command({ input: 'input_no_video_codec.mp4', format: 'avi', codecs: { audio: 'mp3' } });
 
       expect(ffmpeg).toHaveBeenCalledTimes(3);
       expect(ffmpeg).toHaveBeenCalledWith([
@@ -222,8 +222,8 @@ describe('commands', () => {
     test('splitHls has codec and segmentDuration fallback.', async () => {
       const command = commands['split-hls'];
 
-      await command('input_no_codec.mp4', 12);
-      await command('input_no_duration.mp4', undefined, { audio: 'aac', video: 'h264' });
+      await command({ input: 'input_no_codec.mp4', segmentDuration: 12 });
+      await command({ input: 'input_no_duration.mp4', codecs: { audio: 'aac', video: 'h264' } });
 
       expect(ffmpeg).toHaveBeenCalledTimes(2);
       expect(ffmpeg).toHaveBeenCalledWith([
@@ -265,7 +265,7 @@ describe('commands', () => {
     test('split has segmentDuration fallback.', async () => {
       const command = commands.split;
 
-      command('input.mp4');
+      command({ input: 'input.mp4' });
 
       expect(ffmpeg).toHaveBeenCalledTimes(1);
       expect(ffmpeg).toHaveBeenCalledWith([
@@ -286,8 +286,8 @@ describe('commands', () => {
     test('extractAudio has codec and extension fallback.', async () => {
       const command = commands['extract-audio'];
 
-      await command('input_no_codec.mp4', undefined, 'aac');
-      await command('input_no_extension.mp4', 'wav');
+      await command({ input: 'input_no_codec.mp4', extension: 'aac' });
+      await command({ input: 'input_no_extension.mp4', audioCodec: 'wav' });
 
       expect(ffmpeg).toHaveBeenCalledTimes(2);
       expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input_no_codec.mp4', '-vn', '-c:a', 'mp3', 'input_no_codec.aac']);
@@ -304,7 +304,7 @@ describe('commands', () => {
     test('scale fixes negative to positive numbers.', async () => {
       const command = commands.scale;
 
-      await command('input.mp4', -1200, -900);
+      await command({ input: 'input.mp4', width: -1200, height: -900 });
 
       expect(ffmpeg).toHaveBeenCalledTimes(1);
       expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'scale=1200:900', 'input_scaled.mp4']);
@@ -313,8 +313,8 @@ describe('commands', () => {
     test('transpose is always 0 .. 3.', async () => {
       const command = commands.transpose;
 
-      await command('input_-7.mp4', -7);
-      await command('input_12.mp4', 12);
+      await command({ input: 'input_-7.mp4', transposeType: -7 });
+      await command({ input: 'input_12.mp4', transposeType: 12 });
 
       expect(ffmpeg).toHaveBeenCalledTimes(2);
       expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input_-7.mp4', '-vf', 'transpose=3', 'input_-7_transposed.mp4']);
@@ -324,7 +324,7 @@ describe('commands', () => {
     test('modifyFps has always positive fps.', async () => {
       const command = commands['modify-fps'];
 
-      await command('input.mp4', -42);
+      await command({ input: 'input.mp4', fps: -42 });
 
       expect(ffmpeg).toHaveBeenCalledTimes(1);
       expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'fps=42', 'input_42fps.mp4']);
@@ -333,7 +333,7 @@ describe('commands', () => {
     test('crop has always positive numbers.', async () => {
       const command = commands.crop;
 
-      await command('input.mp4', -500, -400, -200, -100);
+      await command({ input: 'input.mp4', width: -500, height: -400, x: -200, y: -100 });
 
       expect(ffmpeg).toHaveBeenCalledTimes(1);
       expect(ffmpeg).toHaveBeenCalledWith(['-i', 'input.mp4', '-vf', 'crop=500:400:200:100', 'input_cropped.mp4']);
@@ -342,17 +342,24 @@ describe('commands', () => {
     test('watermark has always positive numbers and has fallbacks.', async () => {
       const command = commands.watermark;
 
-      //await command('input_negative.mp4', 'watermark', -100, -200, -24, 'blue');
-      await command('input_none.mp4');
+      await command({
+        input: 'input_negative.mp4',
+        text: 'watermark',
+        x: -100,
+        y: -200,
+        fontsize: -24,
+        fontcolor: 'blue'
+      });
+      await command({ input: 'input_none.mp4' });
 
-      expect(ffmpeg).toHaveBeenCalledTimes(1);
-      /*expect(ffmpeg).toHaveBeenCalledWith([
+      expect(ffmpeg).toHaveBeenCalledTimes(2);
+      expect(ffmpeg).toHaveBeenCalledWith([
         '-i',
         'input_negative.mp4',
         '-vf',
         "drawtext=text='watermark':x=100:y=200:fontsize=24:fontcolor=blue",
         'input_negative_watermarked.mp4'
-      ]);*/
+      ]);
       expect(ffmpeg).toHaveBeenCalledWith([
         '-i',
         'input_none.mp4',
