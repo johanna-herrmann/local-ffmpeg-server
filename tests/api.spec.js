@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { mkdir, readdir, readFile, writeFile, unlink } from 'fs/promises';
+import { mkdir, readdir, writeFile, unlink } from 'fs/promises';
 import request from 'supertest';
 import { jest, describe, test, expect, beforeAll, beforeEach, afterEach, afterAll } from '@jest/globals';
 
