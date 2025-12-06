@@ -1,0 +1,432 @@
+openapi: 3.0.3
+info:
+  title: Local FFMPEG Server API
+  version: 0.0.1
+  description: API for uploading, processing and downloading videos
+
+components:
+  schemas:
+    FileList:
+      type: array
+      items:
+        type: string
+
+servers:
+  - url: /
+
+paths:
+  /upload:
+    post:
+      summary: File upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  example: ./test-files/sample.mp4
+      responses:
+        '200':
+          description: File uploaded successfully
+        '400':
+          description: No file in request
+        '500':
+          description: Unknown error
+
+  /command/convert:
+    post:
+      summary: Convert a video to another container/format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, format ]
+              properties:
+                input:
+                  type: string
+                  example: video.mkv
+                format:
+                  type: string
+                  example: mp4
+                codecs:
+                  type: object
+                  properties:
+                    video:
+                      type: string
+                      example: h264
+                    audio:
+                      type: string
+                      example: aac
+      responses:
+        '200':
+          description: Converted file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/split-hls:
+    post:
+      summary: Split video into HLS (.ts + .m3u8)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                segmentDuration:
+                  type: number
+                  example: 7
+                codecs:
+                  type: object
+                  properties:
+                    video:
+                      type: string
+                      example: copy
+                    audio:
+                      type: string
+                      example: copy
+      responses:
+        '200':
+          description: HLS playlist and segments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/concat-hls-to-mp4:
+    post:
+      summary: Merge HLS (.ts via concat file) into MP4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: list.txt
+      responses:
+        '200':
+          description: MP4 file created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/split:
+    post:
+      summary: Split video into equal segments (no re-encoding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                segmentDuration:
+                  type: number
+                  example: 10
+      responses:
+        '200':
+          description: Segmented files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/extract-part:
+    post:
+      summary: Extract time range from video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, begin, end ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                begin:
+                  type: string
+                  example: "00:01:00"
+                end:
+                  type: string
+                  example: "00:02:30"
+      responses:
+        '200':
+          description: Extracted clip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/extract-video:
+    post:
+      summary: Remove audio track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+      responses:
+        '200':
+          description: Video-only file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/extract-audio:
+    post:
+      summary: Extract audio stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                audioCodec:
+                  type: string
+                  example: aac
+                extension:
+                  type: string
+                  example: m4a
+      responses:
+        '200':
+          description: Audio file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/scale:
+    post:
+      summary: Scale video resolution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, width, height ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                width:
+                  type: number
+                height:
+                  type: number
+      responses:
+        '200':
+          description: Scaled video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/transpose:
+    post:
+      summary: Rotate or mirror video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, transposeType ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                transposeType:
+                  type: integer
+                  minimum: 0
+                  maximum: 3
+                  description: |
+                    0 = 90° counter-clock-wise + flip
+                    1 = 90° clock-wise
+                    2 = 90° counter-clock-wise
+                    3 = 90° clock-wise + flip
+      responses:
+        '200':
+          description: Transposed video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/modify-fps:
+    post:
+      summary: Change frames per second
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, fps ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                fps:
+                  type: number
+                  example: 30
+      responses:
+        '200':
+          description: FPS modified video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/crop:
+    post:
+      summary: Crop video area
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input, width, height, x, y ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                width:
+                  type: number
+                height:
+                  type: number
+                x:
+                  type: number
+                y:
+                  type: number
+      responses:
+        '200':
+          description: Cropped video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /command/watermark:
+    post:
+      summary: Add text watermark
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ input ]
+              properties:
+                input:
+                  type: string
+                  example: video.mp4
+                text:
+                  type: string
+                x:
+                  type: number
+                y:
+                  type: number
+                fontsize:
+                  type: number
+                fontcolor:
+                  type: string
+                  example: white
+      responses:
+        '200':
+          description: Watermarked video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileList'
+        '500':
+          description: Unknown error
+
+  /download/{filename}:
+    get:
+      summary: File download
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+            example: video_cropped.mp4
+      responses:
+        '200':
+          description: File (binary)
+        '404':
+          description: File not found
+        '500':
+          description: Unknown download error
+
+  /remove-files:
+    delete:
+      summary: Removes all files in local ./files directory
+      responses:
+        '200':
+          description: Files deleted successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 5 files deleted
+        '500':
+          description: Unknown error
