@@ -4,7 +4,7 @@ import { mkdir, readdir, writeFile, unlink } from 'fs/promises';
 import request from 'supertest';
 import { jest, describe, test, expect, beforeAll, beforeEach, afterEach, afterAll } from '@jest/globals';
 
-let app, getApi, commands;
+let app, getApi, commands, consoleSpy;
 const fileDir = './files';
 const origin = 'http://localhost:1234';
 
@@ -48,11 +48,11 @@ describe('API', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    consoleSpy?.mockRestore();
   });
 
   afterAll(async () => {
     await clearFileDir();
-    //await unlink(fileDir);
   });
 
   describe('CORS', () => {
@@ -148,11 +148,16 @@ describe('API', () => {
     });
 
     test('returns 500 json on internal server error.', async () => {
+      let loggedMessage;
+      consoleSpy = jest.spyOn(console, 'error').mockImplementation((message) => {
+        loggedMessage = message;
+      });
       commands.convert.mockRejectedValueOnce(new Error('test error message'));
       const res = await request(app).post('/command/convert').send({});
 
       expect(res.status).toBe(500);
       expect(res.text).toEqual('Error: test error message');
+      expect(loggedMessage?.toString()).toEqual('Error: test error message');
     });
   });
 });
