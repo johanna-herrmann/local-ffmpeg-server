@@ -6,6 +6,7 @@ import { jest, describe, test, expect, beforeAll, beforeEach, afterEach, afterAl
 
 let app, getApi, commands;
 const fileDir = './files';
+const origin = 'http://localhost:1234';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -41,7 +42,7 @@ describe('API', () => {
   });
 
   beforeEach(() => {
-    app = getApi();
+    app = getApi(origin);
     jest.clearAllMocks();
   });
 
@@ -52,6 +53,20 @@ describe('API', () => {
   afterAll(async () => {
     await clearFileDir();
     //await unlink(fileDir);
+  });
+
+  describe('CORS', () => {
+    test('Sets correct origin header for api request.', async () => {
+      const res = await request(app).post('/upload');
+
+      expect(res.headers['access-control-allow-origin']).toEqual(origin);
+    });
+
+    test('Sets no origin header for docs request.', async () => {
+      const res = await request(app).post('/docs');
+
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
   });
 
   describe('POST /upload', () => {
