@@ -87,5 +87,17 @@ On of those headers is `Access-Control-Allow-Origin` which decides which origins
 So if `https://abc.de` has to be allowed, the header must be set to this origin,
 so this has to be the value of the `origin` argument.
 
+## Demo
+To use the demo frontend, you will need two terminal windows:
+* First window:
+  * Start the server on port `3000`, allowing `http://localhost:8080` for CORS
+* Second window:
+  * Run:
+    ```shell
+    cd ./demo
+    npx serve -l 8080
+    ```
+* Now visit: `http://localhost:8080`
+
 ## License
 [MIT LICENSE](./LICENSE.md)

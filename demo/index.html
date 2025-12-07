@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+    default-src 'self' http://localhost:3000 ws://localhost:3000;
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self';
+    font-src 'self';
+    connect-src 'self' http://localhost:3000 ws://localhost:3000;
+  "
+  />
+  <title>Local FFMPEG Server - Demo</title>
+  <style>
+    div#functions {
+        margin-top: 20px;
+    }
+
+    div#functions div {
+        margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Local FFMPEG Server - Demo</h1>
+
+<p>
+  Demonstrates only three of the supported features.<br>
+  Read the docs to see all supported features.
+</p>
+
+<div>
+  <div>
+    <input onchange="checkFile()" type="file" id="file" name="file">
+  </div>
+  <div id="functions" style="display: none; ">
+    <div>
+      <button onclick="convert()">Convert to avi, with codecs H264 and mp3</button>
+    </div>
+    <div>
+      <button onclick="crop()">Crop video to 800x600 from the upper-right corner</button>
+    </div>
+    <div>
+      <button onclick="watermark()">Watermark video with "Hello" in the upper-right corner, blue text</button><br>
+      (Using ffmpeg's default font)
+    </div>
+  </div>
+  <p>
+    <span id="state"></span>
+  </p>
+  <p>
+    Downloads:<br>
+    <span id="downloads"></span>
+    <button onclick="remove()">Remove files</button>
+  </p>
+</div>
+
+<script>
+  let ws;
+  const fileField = document.querySelector('#file');
+  const functionsDiv = document.querySelector('#functions');
+  const state = document.querySelector('#state');
+  const downloads = document.querySelector('#downloads');
+
+  connect();
+
+  function connect() {
+    ws = new WebSocket('ws://localhost:3000');
+
+    ws.onopen = () => console.log('✅ connected');
+    ws.onmessage = (e) => logProgress(e.data);
+    ws.onclose = () => console.log('❌ disconnected');
+  }
+
+  function logProgress(data) {
+    const payload = JSON.parse(data);
+    if (payload.type !== 'progress') {
+      return;
+    }
+    const progress = payload.message;
+    state.innerText = `processing: ${progress}`;
+  }
+
+  function generateDownloads(files) {
+    state.innerText = 'Generating Download-Links...'
+    for (const file of files) {
+      downloads.innerHTML += `<a href="http://localhost:3000/download/${file}">${file}</a><br>`;
+    }
+    state.innerText = '';
+  }
+
+  function checkFile () {
+    functionsDiv.style.display = fileField.files.length > 0 ? 'block' : 'none';
+  }
+
+  async function convert() {
+    await command('convert', { format: 'avi', codecs: { video: 'h264', audio: 'mp3' } });
+  }
+
+  async function crop() {
+    await command('crop', { width: 800, height: 600, x: 0, y: 0 });
+  }
+
+  async function watermark() {
+    await command('watermark', { text: 'Hello', x: 50, y: 50, fontsize: 40, fontcolor: 'blue' });
+  }
+
+  async function command(name, args) {
+    if (fileField.files.length < 1) {
+      return;
+    }
+    state.innerText = 'Uploading...';
+    const data = new FormData()
+    data.append('file', fileField.files[0]);
+    await fetch('http://localhost:3000/upload', { method: 'POST', body: data });
+    state.innerText = 'Sending command...';
+    const response = await fetch(`http://localhost:3000/command/${name}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: "POST",
+        body: JSON.stringify({ ...args, input: fileField.files[0].name })
+      });
+    const files = await response.json();
+    generateDownloads(files);
+  }
+
+  async function remove() {
+    downloads.innerHTML = '';
+    const response = await fetch('http://localhost:3000/remove-files', { method: "DELETE", });
+    const text = await response.text();
+    console.log({ removeFilesFeedback: text });
+  }
+</script>
+
+</body>
+</html>
