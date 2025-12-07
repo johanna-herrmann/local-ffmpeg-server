@@ -1,4 +1,4 @@
-import { jest, describe, test, beforeEach, expect, beforeAll } from '@jest/globals';
+import { jest, describe, test, beforeEach, expect, beforeAll, afterEach } from '@jest/globals';
 
 let mockConnectionCallback;
 let wsSendMock;
@@ -25,11 +25,18 @@ jest.unstable_mockModule('ws', () => ({
 }));
 
 describe('WebSocket Module', () => {
+  let consoleMock;
+
   beforeAll(async () => {
     ({ initWebSocket: initWSModule, send: sendWS, isConnected: isWSConnected } = await import('../lib/ws.js'));
   });
 
+  afterEach(() => {
+    consoleMock?.mockRestore();
+  });
+
   test('should call connection callback and send greeting', () => {
+    consoleMock = jest.spyOn(console, 'log').mockImplementation(() => {});
     const fakeServer = { on: jest.fn() };
     initWSModule(fakeServer);
     const fakeClient = {
@@ -41,9 +48,12 @@ describe('WebSocket Module', () => {
 
     expect(wsSendMock).toHaveBeenCalledWith(JSON.stringify({ type: 'connected', message: 'WebSocket connected' }));
     expect(isWSConnected()).toBe(true);
+    expect(consoleMock).toHaveBeenCalledTimes(1);
+    expect(consoleMock).toHaveBeenCalledWith('WS client connected');
   });
 
   test('should handle client close', () => {
+    consoleMock = jest.spyOn(console, 'log').mockImplementation(() => {});
     const fakeServer = { on: jest.fn() };
     initWSModule(fakeServer);
     const fakeClient = {
@@ -57,6 +67,8 @@ describe('WebSocket Module', () => {
     wsOnMocks['close']();
 
     expect(isWSConnected()).toBe(false);
+    expect(consoleMock).toHaveBeenCalledTimes(2);
+    expect(consoleMock).toHaveBeenCalledWith('WS client disconnected');
   });
 
   test('send() should not send if no client connected', () => {
@@ -66,6 +78,7 @@ describe('WebSocket Module', () => {
   });
 
   test('send() should send payload if client connected', () => {
+    consoleMock = jest.spyOn(console, 'log').mockImplementation(() => {});
     const fakeServer = { on: jest.fn() };
     initWSModule(fakeServer);
     const fakeClient = {
