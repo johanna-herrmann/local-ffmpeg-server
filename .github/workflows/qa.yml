@@ -1,0 +1,29 @@
+name: QA
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  qa:
+    name: QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Audit
+        run: npm run audit
+
+      - name: Run test
+        run: npm run test

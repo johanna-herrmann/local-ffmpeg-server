@@ -23,7 +23,8 @@ Currently supported ffmpeg features:
 
 ### OS Release
 You can use the release for your OS, which is an archive, bundling source code,
-node.js and static linked ffmpeg binaries.
+node.js and static linked ffmpeg binaries. \
+The benefit is, you don't need to install node.js, since it's bundled.
 
 * Go to
   [GitHub Release Page](https://github.com/johanna-herrmann/local-ffmpeg-server/releases/latest)
@@ -31,9 +32,11 @@ node.js and static linked ffmpeg binaries.
 * Unpack the archive
 * Optional: Add `local-ffmpeg-server` directory to `PATH` runtime variable
 
-### Node.js CLI
+### Node.js via npm
+For this install method you need to install node.js first.
 
-Install globally via npm:
+When node.js is installed,
+Install `local-ffmpeg-server` globally via npm:
 ```shell
 npm install -g local-ffmpeg-server
 ```
