@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
+    "@radically-straightforward/package": "^2.0.3",
     "better-npm-audit": "^3.11.0",
     "cross-env": "^10.1.0",
     "eslint": "^8.56.0",

@@ -1,0 +1,136 @@
+name: Multi-OS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # 1️⃣ Build artifacts on Linux, macOS and Windows
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit
+        run: npm run audit
+
+      - name: Test
+        run: npm run test
+
+      - name: package
+        run: npx package
+
+      - name: Copy artifact to workspace (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cp ../local-ffmpeg-server.tar.gz ./local-ffmpeg-server.tar.gz
+
+      - name: Copy artifact to workspace (macOS)
+        if: matrix.os == 'macos-latest'
+        run: cp ../local-ffmpeg-server.tar.gz ./local-ffmpeg-server.tar.gz
+
+      - name: Copy artifact to workspace (Windows)
+        if: matrix.os == 'windows-latest'
+        run: copy ..\local-ffmpeg-server.zip .\local-ffmpeg-server.zip
+
+      - name: Upload artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-linux
+          path: local-ffmpeg-server.tar.gz
+
+      - name: Upload artifact (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-macos
+          path: local-ffmpeg-server.tar.gz
+
+      - name: Upload artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-windows
+          path: local-ffmpeg-server.zip
+
+  # 2️⃣ Create release and upload all artifacts
+  release_os:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Download all artifacts
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact-linux
+          path: ./linux-artifact
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact-macos
+          path: ./macos-artifact
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact-windows
+          path: ./windows-artifact
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./linux-artifact/local-ffmpeg-server.tar.gz
+          asset_name: local-ffmpeg-server-linux.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload macOS artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macos-artifact/local-ffmpeg-server.tar.gz
+          asset_name: local-ffmpeg-server-macos.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-artifact/local-ffmpeg-server.zip
+          asset_name: local-ffmpeg-server-windows.zip
+          asset_content_type: application/zip
