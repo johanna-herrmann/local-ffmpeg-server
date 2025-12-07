@@ -4,6 +4,9 @@
   "description": "Locally running server to run ffmpeg commands local instead of in-browser.",
   "main": "index.js",
   "type": "module",
+  "bin": {
+    "local-ffmpeg-server": "lib/index.js"
+  },
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand --verbose --detectOpenHandles --forceExit"
   },
