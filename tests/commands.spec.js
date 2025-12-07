@@ -163,14 +163,22 @@ describe('commands', () => {
   test('watermark calls with correct args.', async () => {
     const command = commands.watermark;
 
-    await command({ input: 'input.mp4', text: 'watermark', x: 10, y: 20, fontsize: 32, fontcolor: 'blue' });
+    await command({
+      input: 'input.mp4',
+      text: 'watermark',
+      x: 10,
+      y: 20,
+      fontsize: 32,
+      fontcolor: 'blue',
+      font: 'font.ttf'
+    });
 
     expect(ffmpeg).toHaveBeenCalledTimes(1);
     expect(ffmpeg).toHaveBeenCalledWith([
       '-i',
       'input.mp4',
       '-vf',
-      "drawtext=text='watermark':x=10:y=20:fontsize=32:fontcolor=blue",
+      "drawtext=fontfile='font.ttf':text='watermark':x=10:y=20:fontsize=32:fontcolor=blue",
       'input_watermarked.mp4'
     ]);
   });

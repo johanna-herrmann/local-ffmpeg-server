@@ -28,6 +28,11 @@ describe('API', () => {
           if (input?.endsWith('video.mp4')) {
             await writeFile(path.join(fileDir, 'video.avi'), '');
           }
+        }),
+        watermark: jest.fn(async ({ input }) => {
+          if (input?.endsWith('video.mp4')) {
+            await writeFile(path.join(fileDir, 'video_watermarked.mp4'), '');
+          }
         })
       }
     }));
@@ -112,7 +117,7 @@ describe('API', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('command not found: unknown');
     });
 
-    test('executes command and returns created files.', async () => {
+    test('executes command and returns created files, convert.', async () => {
       await clearFileDir();
       consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
@@ -121,9 +126,25 @@ describe('API', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual(['video.avi']);
       expect(commands.convert).toHaveBeenCalledTimes(1);
-      expect(commands.convert).toBeCalledWith({ input: './files/video.mp4', format: 'avi' });
+      expect(commands.convert).toBeCalledWith({ input: `${fileDir}/video.mp4`, format: 'avi' });
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
       expect(consoleLogSpy).toHaveBeenCalledWith('Successfully finished convert command. Created files', ['video.avi']);
+    });
+
+    test('executes command and returns created files, watermark.', async () => {
+      await clearFileDir();
+      consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const res = await request(app).post('/command/watermark').send({ input: 'video.mp4', font: 'font.ttf' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(['video_watermarked.mp4']);
+      expect(commands.watermark).toHaveBeenCalledTimes(1);
+      expect(commands.watermark).toBeCalledWith({ input: `${fileDir}/video.mp4`, font: `${fileDir}/font.ttf` });
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+      expect(consoleLogSpy).toHaveBeenCalledWith('Successfully finished watermark command. Created files', [
+        'video_watermarked.mp4'
+      ]);
     });
   });
 

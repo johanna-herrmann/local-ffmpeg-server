@@ -389,6 +389,9 @@ paths:
                 fontcolor:
                   type: string
                   example: white
+                font:
+                  type: string
+                  example: font.ttf
       responses:
         '200':
           description: Watermarked video
